@@ -1,12 +1,16 @@
-version: "3.8"
-
 services:
 
-  # Base de datos de Dagster
+  # =========================
+
+  # PostgreSQL
+
+  # =========================
 
   postgres:
 
     image: postgres:15
+
+    container_name: dagster-postgres
 
     environment:
 
@@ -20,31 +24,77 @@ services:
 
       - "5432:5432"
 
-  # UI de Dagster
+    volumes:
+
+      - postgres_data:/var/lib/postgresql/data
+
+  # =========================
+
+  # Dagster Webserver (UI)
+
+  # =========================
 
   dagster-webserver:
 
-    image: dagster/dagster:latest
+    image: dagster/dagster-webserver:latest
 
-    command: dagster-webserver -h 0.0.0.0 -p 3000 -w workspace.yaml
+    container_name: dagster-webserver
+
+    command:
+
+      - dagster-webserver
+
+      - -h
+
+      - 0.0.0.0
+
+      - -p
+
+      - "3000"
+
+      - -w
+
+      - workspace.yaml
+
+    working_dir: /opt/dagster/app
 
     ports:
 
       - "3000:3000"
 
+    volumes:
+
+      - ./workspace.yaml:/opt/dagster/app/workspace.yaml
+
     depends_on:
 
       - postgres
 
       - dagster-user-code
 
-  # Scheduler / daemon
+  # =========================
+
+  # Dagster Daemon
+
+  # =========================
 
   dagster-daemon:
 
-    image: dagster/dagster:latest
+    image: dagster/dagster-daemon:latest
 
-    command: dagster-daemon run
+    container_name: dagster-daemon
+
+    command:
+
+      - dagster-daemon
+
+      - run
+
+    working_dir: /opt/dagster/app
+
+    volumes:
+
+      - ./workspace.yaml:/opt/dagster/app/workspace.yaml
 
     depends_on:
 
@@ -52,14 +102,48 @@ services:
 
       - dagster-user-code
 
-  # codigo Dagster user-code
+  # =========================
+
+  # User Code Server
+
+  # =========================
 
   dagster-user-code:
 
-    build: ./user_code_image
+    build:
+
+      context: ../../
+
+      dockerfile: infra/docker/user_code_image/Dockerfile
 
     container_name: dagster-user-code
+
+    working_dir: /opt/dagster/app
+
+    command:
+
+      - dagster
+
+      - api
+
+      - grpc
+
+      - -h
+
+      - 0.0.0.0
+
+      - -p
+
+      - "4000"
+
+      - -m
+
+      - user_code
 
     ports:
 
       - "4000:4000"
+
+volumes:
+
+  postgres_data:
