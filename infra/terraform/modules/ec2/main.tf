@@ -49,7 +49,11 @@ resource "aws_instance" "ec2_server" {
                 yum update -y
                 # instalar docker
                 amazon-linux-extras install docker -y
+                # instalar git
+                yum install git -y
+                # iniciar docker
                 service docker start
+                # permisos docker
                 usermod -a -G docker ec2-user
                 # instalar docker compose
                 curl -SL https://github.com/docker/compose/releases/download/v2.27.0/docker-compose-linux-x86_64 -o /usr/local/bin/docker-compose
@@ -58,7 +62,7 @@ resource "aws_instance" "ec2_server" {
                 cd /home/ec2-user
                 # clonar tu repo
                 git clone https://github.com/Edwin-Loranca/inegi-data-project.git
-                cd inegi-data-project/docker
+                cd inegi-data-project/infra/docker
                 # levantar todo el sistema
                 docker-compose up -d --build
                 EOF
