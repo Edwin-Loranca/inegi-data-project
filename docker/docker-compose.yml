@@ -1,0 +1,65 @@
+version: "3.8"
+
+services:
+
+  # Base de datos de Dagster
+
+  postgres:
+
+    image: postgres:15
+
+    environment:
+
+      POSTGRES_USER: dagster
+
+      POSTGRES_PASSWORD: dagster
+
+      POSTGRES_DB: dagster
+
+    ports:
+
+      - "5432:5432"
+
+  # UI de Dagster
+
+  dagster-webserver:
+
+    image: dagster/dagster:latest
+
+    command: dagster-webserver -h 0.0.0.0 -p 3000 -w workspace.yaml
+
+    ports:
+
+      - "3000:3000"
+
+    depends_on:
+
+      - postgres
+
+      - dagster-user-code
+
+  # Scheduler / daemon
+
+  dagster-daemon:
+
+    image: dagster/dagster:latest
+
+    command: dagster-daemon run
+
+    depends_on:
+
+      - postgres
+
+      - dagster-user-code
+
+  # codigo Dagster user-code
+
+  dagster-user-code:
+
+    build: ../user_code
+
+    container_name: dagster-user-code
+
+    ports:
+
+      - "4000:4000"
