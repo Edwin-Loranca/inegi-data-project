@@ -56,7 +56,7 @@ services:
 
   dagster-user-code:
 
-    build: ../user_code
+    build: ./user_code_image
 
     container_name: dagster-user-code
 

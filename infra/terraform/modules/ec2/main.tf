@@ -54,7 +54,7 @@ resource "aws_instance" "ec2_server" {
                 cd /home/ec2-user
                 # clonar tu repo
                 git clone https://github.com/Edwin-Loranca/inegi-data-project.git
-                cd dagster-project
+                cd inegi-data-project/docker
                 # levantar todo el sistema
                 docker-compose up -d --build
                 EOF
