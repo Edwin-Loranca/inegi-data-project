@@ -5,6 +5,8 @@ resource "aws_key_pair" "ec2_server_key" {
 
 resource "aws_security_group" "ec2_sg" {
 
+  name = "dagster-ec2-sg"
+
   ingress {
 
     from_port   = 22
@@ -38,6 +40,8 @@ resource "aws_instance" "ec2_server" {
     ami           = "ami-0a59ec92177ec3fad"
     instance_type = var.instance_size
     key_name = aws_key_pair.ec2_server_key.key_name
+    vpc_security_group_ids = [aws_security_group.ec2_sg.id]
+    associate_public_ip_address = true
     
     user_data = <<-EOF
                 #!/bin/bash
