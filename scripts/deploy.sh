@@ -8,7 +8,7 @@ git pull origin main
 
 echo "Rebuilding containers..."
 
-cd ./docker
+cd ./infra/docker
 
 docker-compose up -d --build
 
