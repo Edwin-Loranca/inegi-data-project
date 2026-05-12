@@ -1,13 +1,10 @@
 FROM python:3.11-slim
 
-WORKDIR /app
+WORKDIR /opt/dagster/app
 
-COPY requirements.txt .
-
+COPY user_code/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+COPY user_code/dagster_user_code/ ./dagster_user_code/
 
 EXPOSE 4000
-
-CMD ["dagster", "code-server", "start", "-h", "0.0.0.0", "-p", "4000"]

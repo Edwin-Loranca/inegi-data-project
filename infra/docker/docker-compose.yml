@@ -1,149 +1,99 @@
+version: "3.8"
+
 services:
 
   # =========================
-
   # PostgreSQL
-
   # =========================
-
   postgres:
-
     image: postgres:15
-
     container_name: dagster-postgres
-
     environment:
-
       POSTGRES_USER: dagster
-
       POSTGRES_PASSWORD: dagster
-
       POSTGRES_DB: dagster
-
-    ports:
-
-      - "5432:5432"
-
     volumes:
-
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dagster"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   # =========================
-
   # Dagster Webserver (UI)
-
   # =========================
-
   dagster-webserver:
-
-    image: dagster/dagster-webserver:latest
-
-    container_name: dagster-webserver
-
-    command:
-
-      - dagster-webserver
-
-      - -h
-
-      - 0.0.0.0
-
-      - -p
-
-      - "3000"
-
-      - -w
-
-      - workspace.yaml
-
-    working_dir: /opt/dagster/app
-
-    ports:
-
-      - "3000:3000"
-
-    volumes:
-
-      - ./workspace.yaml:/opt/dagster/app/workspace.yaml
-
-    depends_on:
-
-      - postgres
-
-      - dagster-user-code
-
-  # =========================
-
-  # Dagster Daemon
-
-  # =========================
-
-  dagster-daemon:
-
-    image: dagster/dagster-daemon:latest
-
-    container_name: dagster-daemon
-
-    command:
-
-      - dagster-daemon
-
-      - run
-
-    working_dir: /opt/dagster/app
-
-    volumes:
-
-      - ./workspace.yaml:/opt/dagster/app/workspace.yaml
-
-    depends_on:
-
-      - postgres
-
-      - dagster-user-code
-
-  # =========================
-
-  # User Code Server
-
-  # =========================
-
-  dagster-user-code:
-
     build:
-
       context: ../../
-
       dockerfile: infra/docker/user_code_image/Dockerfile
-
-    container_name: dagster-user-code
-
-    working_dir: /opt/dagster/app
-
+    container_name: dagster-webserver
     command:
-
-      - dagster
-
-      - api
-
-      - grpc
-
+      - dagster-webserver
       - -h
-
       - 0.0.0.0
-
       - -p
-
-      - "4000"
-
-      - -m
-
-      - user_code
-
+      - "3000"
+      - -w
+      - /opt/dagster/app/workspace.yaml
+    working_dir: /opt/dagster/app
     ports:
+      - "3000:3000"
+    environment:
+      DAGSTER_HOME: /opt/dagster/dagster_home
+    volumes:
+      - ./workspace.yaml:/opt/dagster/app/workspace.yaml
+      - ./dagster.yaml:/opt/dagster/dagster_home/dagster.yaml
+    depends_on:
+      postgres:
+        condition: service_healthy
+      dagster-user-code:
+        condition: service_started
 
+  # =========================
+  # Dagster Daemon
+  # =========================
+  dagster-daemon:
+    build:
+      context: ../../
+      dockerfile: infra/docker/user_code_image/Dockerfile
+    container_name: dagster-daemon
+    command:
+      - dagster-daemon
+      - run
+    working_dir: /opt/dagster/app
+    environment:
+      DAGSTER_HOME: /opt/dagster/dagster_home
+    volumes:
+      - ./workspace.yaml:/opt/dagster/app/workspace.yaml
+      - ./dagster.yaml:/opt/dagster/dagster_home/dagster.yaml
+    depends_on:
+      postgres:
+        condition: service_healthy
+      dagster-user-code:
+        condition: service_started
+
+  # =========================
+  # User Code Server
+  # =========================
+  dagster-user-code:
+    build:
+      context: ../../
+      dockerfile: infra/docker/user_code_image/Dockerfile
+    container_name: dagster-user-code
+    working_dir: /opt/dagster/app
+    command:
+      - dagster
+      - api
+      - grpc
+      - -h
+      - 0.0.0.0
+      - -p
+      - "4000"
+      - -m
+      - dagster_user_code
+    ports:
       - "4000:4000"
 
 volumes:
-
   postgres_data:
