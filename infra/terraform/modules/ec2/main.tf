@@ -46,15 +46,17 @@ resource "aws_instance" "ec2_server" {
     user_data = <<-EOF
                 #!/bin/bash
                 # actualizar sistema
-                yum update -y
+                dnf update -y
                 # instalar docker
-                amazon-linux-extras install docker -y
+                dnf install docker -y
                 # instalar git
-                yum install git -y
+                dnf install git -y
                 # iniciar docker
-                service docker start
+                systemctl start docker
+                # habilitar docker al reiniciar
+                systemctl enable docker
                 # permisos docker
-                usermod -a -G docker ec2-user
+                usermod -aG docker ec2-user
                 # instalar docker compose
                 curl -SL https://github.com/docker/compose/releases/download/v2.27.0/docker-compose-linux-x86_64 -o /usr/local/bin/docker-compose
                 chmod +x /usr/local/bin/docker-compose
