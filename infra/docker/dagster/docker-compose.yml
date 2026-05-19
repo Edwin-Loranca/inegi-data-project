@@ -25,7 +25,7 @@ services:
   # =========================
   dagster-webserver:
     build:
-      context: ../../
+      context: ../../../
       dockerfile: infra/docker/dagster/user_code_image/Dockerfile
     container_name: dagster-webserver
     command:
@@ -55,7 +55,7 @@ services:
   # =========================
   dagster-daemon:
     build:
-      context: ../../
+      context: ../../../
       dockerfile: infra/docker/dagster/user_code_image/Dockerfile
     container_name: dagster-daemon
     command:
@@ -78,7 +78,7 @@ services:
   # =========================
   dagster-user-code:
     build:
-      context: ../../
+      context: ../../../
       dockerfile: infra/docker/dagster/user_code_image/Dockerfile
     container_name: dagster-user-code
     working_dir: /opt/dagster/app
