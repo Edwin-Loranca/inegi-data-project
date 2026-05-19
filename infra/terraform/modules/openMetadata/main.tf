@@ -1,29 +1,33 @@
-resource "aws_key_pair" "ec2_server_key" {
-    key_name   = "ec2-server-key"
-    public_key = var.public_key
+resource "aws_security_group" "openmetadata_sg" {
+
+  name = "openmetadata-sg"
+
+  ingress {
+
+    from_port   = 8585
+    to_port     = 8585
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+
+  }
+
+  ingress {
+
+    from_port       = 8585
+    to_port         = 8585
+    protocol        = "tcp"
+    security_groups = [var.dagster_security_group_id]
+
+  }
+
+  ingress {
+
+  from_port   = 22
+  to_port     = 22
+  protocol    = "tcp"
+  cidr_blocks = ["0.0.0.0/0"]
+
 }
-
-resource "aws_security_group" "ec2_sg" {
-
-  name = "dagster-ec2-sg"
-
-  ingress {
-
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-
-  }
-
-  ingress {
-
-    from_port   = 3000
-    to_port     = 3000
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-
-  }
 
   egress {
 
@@ -39,9 +43,13 @@ resource "aws_security_group" "ec2_sg" {
 resource "aws_instance" "ec2_server" {
     ami           = "ami-0a59ec92177ec3fad"
     instance_type = var.instance_size
-    key_name = aws_key_pair.ec2_server_key.key_name
-    vpc_security_group_ids = [aws_security_group.ec2_sg.id]
+    key_name = var.ec2_key_name
+    vpc_security_group_ids = [aws_security_group.openmetadata_sg.id]
     associate_public_ip_address = true
+    root_block_device {
+      volume_size = 30
+      volume_type = "gp3"
+      }
     
     user_data = <<-EOF
                 #!/bin/bash
@@ -49,8 +57,6 @@ resource "aws_instance" "ec2_server" {
                 dnf update -y
                 # instalar docker
                 dnf install docker -y
-                # instalar git
-                dnf install git -y
                 # iniciar docker
                 systemctl start docker
                 # habilitar docker al reiniciar
@@ -62,11 +68,11 @@ resource "aws_instance" "ec2_server" {
                 chmod +x /usr/local/bin/docker-compose
                 # ir al home del usuario
                 cd /home/ec2-user
-                # clonar tu repo
-                git clone https://github.com/Edwin-Loranca/inegi-data-project.git
-                cd inegi-data-project/infra/docker
-                # levantar todo el sistema
-                docker-compose up -d --build
+                # crear directorio para open metadata y descargar el docker-compose.yml
+                mkdir openmetadata-docker && cd openmetadata-docker
+                curl -sL -o docker-compose-postgres.yml https://github.com/open-metadata/OpenMetadata/releases/download/1.12.6-release/docker-compose-postgres.yml
+                # levantar el servicio
+                docker-compose -f docker-compose-postgres.yml up --detach
                 EOF
     
     tags = {
